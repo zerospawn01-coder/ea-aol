@@ -17,6 +17,7 @@ class ContractSmokeTest(unittest.TestCase):
 
     def test_contract_document_exists(self) -> None:
         self.assertTrue((REPO_ROOT / "contracts" / "system_contract.md").is_file())
+        self.assertTrue((REPO_ROOT / "contracts" / "error_contract.md").is_file())
         self.assertTrue(
             (REPO_ROOT / "contracts" / "operations" / "describe_runtime_surface.md").is_file()
         )
@@ -25,10 +26,20 @@ class ContractSmokeTest(unittest.TestCase):
         )
         self.assertTrue((REPO_ROOT / "contracts" / "schemas" / "operation.schema.json").is_file())
         self.assertTrue(
+            (REPO_ROOT / "contracts" / "schemas" / "response_envelope.schema.json").is_file()
+        )
+        self.assertTrue((REPO_ROOT / "contracts" / "schemas" / "error.schema.json").is_file())
+        self.assertTrue(
             (REPO_ROOT / "contracts" / "schemas" / "describe_runtime_surface.schema.json").is_file()
         )
         self.assertTrue(
+            (REPO_ROOT / "contracts" / "schemas" / "describe_runtime_surface.response.schema.json").is_file()
+        )
+        self.assertTrue(
             (REPO_ROOT / "contracts" / "schemas" / "list_supported_operations.schema.json").is_file()
+        )
+        self.assertTrue(
+            (REPO_ROOT / "contracts" / "schemas" / "list_supported_operations.response.schema.json").is_file()
         )
 
     def test_entrypoint_surface_imports(self) -> None:

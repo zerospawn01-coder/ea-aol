@@ -36,7 +36,7 @@ The initial runtime surface is `src.entrypoint.run_entrypoint`.
 
 ### Supported Operation
 
-The bootstrap contract supports exactly one operation:
+The bootstrap contract currently supports these operations:
 
 - `describe-runtime-surface`
 - `list-supported-operations`
@@ -49,23 +49,51 @@ The canonical operation contract lives in:
 The machine-readable schemas live in:
 
 - `contracts/schemas/operation.schema.json`
+- `contracts/schemas/response_envelope.schema.json`
+- `contracts/schemas/error.schema.json`
 - `contracts/schemas/describe_runtime_surface.schema.json`
+- `contracts/schemas/describe_runtime_surface.response.schema.json`
 - `contracts/schemas/list_supported_operations.schema.json`
+- `contracts/schemas/list_supported_operations.response.schema.json`
 
 ### Output
 
-On success, `run_entrypoint` returns a mapping with:
+Every entrypoint call must return a response envelope with:
 
-- `ok`: `true`
+- `status`
 - `operation`: echoed operation name
-- `surface`: structured runtime surface description
+- `contract_version`
+- exactly one of `result` or `error`
 
-The `surface` object must contain:
+Successful calls return `status: "ok"` and a `result` object validated against the operation-specific response schema.
+
+### Error Contract
+
+Error responses return `status: "error"` and an `error` object with:
+
+- `code`
+- `message`
+- `category`
+- `retryable`
+
+The bootstrap taxonomy currently distinguishes:
+
+- `validation_error`
+- `unsupported_operation`
+- `internal_error`
+
+### Operation Response Requirements
+
+For `describe-runtime-surface`, the result object must contain:
 
 - `project`
 - `status`
 - `contract`
 - `supported_operations`
+
+For `list-supported-operations`, the result object must contain:
+
+- `operations`
 
 ### Failure Conditions
 
@@ -84,6 +112,7 @@ The entrypoint must reject requests when:
 All unsupported, malformed, or not-yet-implemented requests must stop with an explicit exception.
 The bootstrap runtime must not infer missing fields, silently coerce invalid values, or continue on unknown operations.
 The entrypoint must only dispatch operations that are documented and schema-backed.
+If a handler or normalizer fails unexpectedly, the runtime must still return a contract-valid `internal_error` envelope.
 
 ### Non-goals
 
@@ -97,9 +126,10 @@ The repository must retain tests that check:
 
 - the expected top-level directories exist
 - the contract document is present
+- the error contract document is present
 - operation-level contract documents are present
 - machine-readable schemas are present
 - the implementation entrypoint can be imported
 - valid requests succeed
-- malformed requests fail closed
-- unsupported operations fail closed
+- malformed requests fail closed with the error envelope shape intact
+- unsupported operations fail closed with the error envelope shape intact

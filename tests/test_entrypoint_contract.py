@@ -19,12 +19,12 @@ class EntrypointContractTest(unittest.TestCase):
             }
         )
 
-        self.assertTrue(response["ok"])
+        self.assertEqual(response["status"], "ok")
         self.assertEqual(response["operation"], "describe-runtime-surface")
-        self.assertEqual(response["payload"], {})
-        self.assertEqual(response["surface"]["project"], "ea-aol")
+        self.assertEqual(response["contract_version"], "ea-aol/0.1")
+        self.assertEqual(response["result"]["project"], "ea-aol")
         self.assertEqual(
-            response["surface"]["supported_operations"],
+            response["result"]["supported_operations"],
             ["describe-runtime-surface", "list-supported-operations"],
         )
 
@@ -38,78 +38,109 @@ class EntrypointContractTest(unittest.TestCase):
             }
         )
 
-        self.assertTrue(response["ok"])
+        self.assertEqual(response["status"], "ok")
         self.assertEqual(response["operation"], "list-supported-operations")
+        self.assertEqual(response["contract_version"], "ea-aol/0.1")
         self.assertEqual(
-            response["operations"],
+            response["result"]["operations"],
             ["describe-runtime-surface", "list-supported-operations"],
         )
 
-    def test_missing_operation_fails_closed(self) -> None:
-        from src.entrypoint import ContractViolationError, run_entrypoint
+    def test_missing_operation_returns_validation_error_shape(self) -> None:
+        from src.entrypoint import run_entrypoint
 
-        with self.assertRaisesRegex(
-            ContractViolationError,
-            "Request.operation is required.",
-        ):
-            run_entrypoint({"payload": {}})
+        response = run_entrypoint({"payload": {}})
+        self.assertEqual(response["status"], "error")
+        self.assertEqual(response["operation"], "unknown")
+        self.assertEqual(response["error"]["code"], "validation_error")
+        self.assertEqual(response["error"]["category"], "validation")
+        self.assertFalse(response["error"]["retryable"])
+        self.assertIn("Request.operation is required.", response["error"]["message"])
 
-    def test_invalid_payload_fails_closed(self) -> None:
-        from src.entrypoint import ContractViolationError, run_entrypoint
+    def test_invalid_payload_returns_validation_error_shape(self) -> None:
+        from src.entrypoint import run_entrypoint
 
-        with self.assertRaisesRegex(
-            ContractViolationError,
-            "Request.payload must be a mapping.",
-        ):
-            run_entrypoint(
-                {
-                    "operation": "describe-runtime-surface",
-                    "payload": "invalid",
-                }
-            )
+        response = run_entrypoint(
+            {
+                "operation": "describe-runtime-surface",
+                "payload": "invalid",
+            }
+        )
+        self.assertEqual(response["status"], "error")
+        self.assertEqual(response["operation"], "describe-runtime-surface")
+        self.assertEqual(response["error"]["code"], "validation_error")
+        self.assertEqual(response["error"]["category"], "validation")
+        self.assertIn("Request.payload must be a mapping.", response["error"]["message"])
 
-    def test_unexpected_request_field_fails_closed(self) -> None:
-        from src.entrypoint import ContractViolationError, run_entrypoint
+    def test_unexpected_request_field_returns_validation_error_shape(self) -> None:
+        from src.entrypoint import run_entrypoint
 
-        with self.assertRaisesRegex(
-            ContractViolationError,
-            "Unexpected request fields: metadata",
-        ):
-            run_entrypoint(
-                {
-                    "operation": "describe-runtime-surface",
-                    "payload": {},
-                    "metadata": {},
-                }
-            )
+        response = run_entrypoint(
+            {
+                "operation": "describe-runtime-surface",
+                "payload": {},
+                "metadata": {},
+            }
+        )
+        self.assertEqual(response["status"], "error")
+        self.assertEqual(response["error"]["code"], "validation_error")
+        self.assertIn("Unexpected request fields: metadata", response["error"]["message"])
 
-    def test_unsupported_operation_fails_closed(self) -> None:
-        from src.entrypoint import ContractViolationError, run_entrypoint
+    def test_unsupported_operation_returns_unsupported_error_shape(self) -> None:
+        from src.entrypoint import run_entrypoint
 
-        with self.assertRaisesRegex(
-            ContractViolationError,
-            "Unsupported operation: bootstrap-runtime",
-        ):
-            run_entrypoint(
-                {
-                    "operation": "bootstrap-runtime",
-                    "payload": {},
-                }
-            )
+        response = run_entrypoint(
+            {
+                "operation": "bootstrap-runtime",
+                "payload": {},
+            }
+        )
+        self.assertEqual(response["status"], "error")
+        self.assertEqual(response["operation"], "bootstrap-runtime")
+        self.assertEqual(response["error"]["code"], "unsupported_operation")
+        self.assertEqual(response["error"]["category"], "unsupported")
+        self.assertFalse(response["error"]["retryable"])
 
-    def test_second_operation_rejects_payload_fields(self) -> None:
-        from src.entrypoint import ContractViolationError, run_entrypoint
+    def test_second_operation_rejects_payload_fields_with_error_shape(self) -> None:
+        from src.entrypoint import run_entrypoint
 
-        with self.assertRaisesRegex(
-            ContractViolationError,
+        response = run_entrypoint(
+            {
+                "operation": "list-supported-operations",
+                "payload": {"verbose": True},
+            }
+        )
+        self.assertEqual(response["status"], "error")
+        self.assertEqual(response["error"]["code"], "validation_error")
+        self.assertIn(
             "Operation 'list-supported-operations' does not accept payload fields.",
-        ):
-            run_entrypoint(
+            response["error"]["message"],
+        )
+
+    def test_internal_failure_returns_internal_error_shape(self) -> None:
+        import src.entrypoint as entrypoint
+
+        original_handler = entrypoint.HANDLERS["list-supported-operations"]
+
+        def boom(_payload: dict[str, object]) -> dict[str, object]:
+            raise RuntimeError("boom")
+
+        entrypoint.HANDLERS["list-supported-operations"] = boom
+        try:
+            response = entrypoint.run_entrypoint(
                 {
                     "operation": "list-supported-operations",
-                    "payload": {"verbose": True},
+                    "payload": {},
                 }
             )
+        finally:
+            entrypoint.HANDLERS["list-supported-operations"] = original_handler
+
+        self.assertEqual(response["status"], "error")
+        self.assertEqual(response["error"]["code"], "internal_error")
+        self.assertEqual(response["error"]["category"], "internal")
+        self.assertFalse(response["error"]["retryable"])
+        self.assertEqual(response["error"]["message"], "boom")
 
 
 if __name__ == "__main__":
