@@ -50,6 +50,7 @@ The canonical operation contract lives in:
 
 The machine-readable schemas live in:
 
+- `contracts/operation_manifest.json`
 - `contracts/schemas/operation.schema.json`
 - `contracts/schemas/response_envelope.schema.json`
 - `contracts/schemas/error.schema.json`
@@ -122,6 +123,7 @@ All unsupported, malformed, or not-yet-implemented requests must stop with an ex
 The bootstrap runtime must not infer missing fields, silently coerce invalid values, or continue on unknown operations.
 The entrypoint must only dispatch operations that are documented and schema-backed.
 If a handler or normalizer fails unexpectedly, the runtime must still return a contract-valid `internal_error` envelope.
+If an operation is partially added but missing its contract document, schema, registry entry, or declared test file, the completeness check must reject the runtime before dispatch.
 
 ### Non-goals
 

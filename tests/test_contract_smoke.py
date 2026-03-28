@@ -18,6 +18,7 @@ class ContractSmokeTest(unittest.TestCase):
     def test_contract_document_exists(self) -> None:
         self.assertTrue((REPO_ROOT / "contracts" / "system_contract.md").is_file())
         self.assertTrue((REPO_ROOT / "contracts" / "error_contract.md").is_file())
+        self.assertTrue((REPO_ROOT / "contracts" / "operation_manifest.json").is_file())
         self.assertTrue(
             (REPO_ROOT / "contracts" / "operations" / "describe_runtime_surface.md").is_file()
         )

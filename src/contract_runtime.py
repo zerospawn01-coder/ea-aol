@@ -11,6 +11,7 @@ from typing import Any
 CONTRACT_ROOT = Path(__file__).resolve().parents[1] / "contracts"
 SCHEMA_ROOT = CONTRACT_ROOT / "schemas"
 OPERATION_ROOT = CONTRACT_ROOT / "operations"
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 OPERATION_CONTRACTS = {
     "describe-runtime-surface": (
@@ -50,6 +51,12 @@ ERROR_REGISTRY = {
 def load_schema(schema_name: str) -> dict[str, Any]:
     schema_path = SCHEMA_ROOT / schema_name
     with schema_path.open("r", encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def load_operation_manifest() -> dict[str, Any]:
+    manifest_path = CONTRACT_ROOT / "operation_manifest.json"
+    with manifest_path.open("r", encoding="utf-8") as handle:
         return json.load(handle)
 
 
@@ -202,3 +209,46 @@ def validate_response_envelope(response: Mapping[str, Any]) -> None:
         raise ContractViolationError("Successful responses must contain result.")
     if response_dict["status"] == "error" and not has_error:
         raise ContractViolationError("Error responses must contain error.")
+
+
+def assert_contract_completeness(handler_registry: Mapping[str, Any]) -> None:
+    manifest = load_operation_manifest()
+    operations = require_mapping(manifest.get("operations"), "Operation manifest.operations must be a mapping.")
+
+    if set(operations.keys()) != set(OPERATION_CONTRACTS.keys()):
+        raise ContractViolationError("Operation manifest keys must match request contract registry.")
+    if set(operations.keys()) != set(RESPONSE_CONTRACTS.keys()):
+        raise ContractViolationError("Operation manifest keys must match response contract registry.")
+    if set(operations.keys()) != set(handler_registry.keys()):
+        raise ContractViolationError("Operation manifest keys must match handler registry.")
+
+    for operation, manifest_entry in operations.items():
+        entry = require_mapping(
+            manifest_entry,
+            f"Operation manifest entry for {operation} must be a mapping.",
+        )
+        expected_doc, expected_request_schema = OPERATION_CONTRACTS[operation]
+        expected_response_schema = RESPONSE_CONTRACTS[operation]
+
+        contract_doc = REPO_ROOT / entry["contract_doc"]
+        if contract_doc != expected_doc or not contract_doc.is_file():
+            raise ContractViolationError(f"Incomplete operation contract doc for {operation}.")
+
+        request_schema = entry["request_schema"]
+        if request_schema != expected_request_schema:
+            raise ContractViolationError(f"Request schema mismatch for {operation}.")
+        load_schema(request_schema)
+
+        response_schema = entry["response_schema"]
+        if response_schema != expected_response_schema:
+            raise ContractViolationError(f"Response schema mismatch for {operation}.")
+        load_schema(response_schema)
+
+        handler_name = entry["handler"]
+        handler = handler_registry.get(operation)
+        if handler is None or getattr(handler, "__name__", None) != handler_name:
+            raise ContractViolationError(f"Handler registry mismatch for {operation}.")
+
+        test_file = REPO_ROOT / entry["test_file"]
+        if not test_file.is_file():
+            raise ContractViolationError(f"Missing declared test file for {operation}.")

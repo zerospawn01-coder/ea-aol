@@ -4,6 +4,7 @@ from typing import Any
 
 from src.contract_runtime import (
     OPERATION_CONTRACTS,
+    assert_contract_completeness,
     build_error_response,
     normalize_success_response,
     validate_operation_envelope,
@@ -68,6 +69,7 @@ def run_entrypoint(request: object) -> dict[str, Any]:
             operation = requested_operation
 
     try:
+        assert_contract_completeness(HANDLERS)
         validated_request = validate_operation_envelope(request)
         operation = validated_request["operation"]
         payload = validate_payload(operation, validated_request["payload"])

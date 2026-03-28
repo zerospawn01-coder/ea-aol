@@ -1,0 +1,26 @@
+{
+  "contract_version": "ea-aol/0.1",
+  "operations": {
+    "describe-runtime-surface": {
+      "contract_doc": "contracts/operations/describe_runtime_surface.md",
+      "request_schema": "describe_runtime_surface.schema.json",
+      "response_schema": "describe_runtime_surface.response.schema.json",
+      "handler": "_handle_describe_runtime_surface",
+      "test_file": "tests/test_entrypoint_contract.py"
+    },
+    "list-supported-operations": {
+      "contract_doc": "contracts/operations/list_supported_operations.md",
+      "request_schema": "list_supported_operations.schema.json",
+      "response_schema": "list_supported_operations.response.schema.json",
+      "handler": "_handle_list_supported_operations",
+      "test_file": "tests/test_entrypoint_contract.py"
+    },
+    "validate-request-envelope": {
+      "contract_doc": "contracts/operations/validate_request_envelope.md",
+      "request_schema": "validate_request_envelope.schema.json",
+      "response_schema": "validate_request_envelope.response.schema.json",
+      "handler": "_handle_validate_request_envelope",
+      "test_file": "tests/test_entrypoint_contract.py"
+    }
+  }
+}

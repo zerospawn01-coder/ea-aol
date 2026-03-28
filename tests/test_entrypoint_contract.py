@@ -9,6 +9,25 @@ if str(REPO_ROOT) not in sys.path:
 
 
 class EntrypointContractTest(unittest.TestCase):
+    def test_completeness_check_passes_for_current_registry(self) -> None:
+        import src.entrypoint as entrypoint
+        from src.contract_runtime import assert_contract_completeness
+
+        assert_contract_completeness(entrypoint.HANDLERS)
+
+    def test_completeness_check_fails_when_handler_is_missing(self) -> None:
+        import src.entrypoint as entrypoint
+        from src.contract_runtime import ContractViolationError, assert_contract_completeness
+
+        incomplete_handlers = dict(entrypoint.HANDLERS)
+        incomplete_handlers.pop("validate-request-envelope")
+
+        with self.assertRaisesRegex(
+            ContractViolationError,
+            "Operation manifest keys must match handler registry.",
+        ):
+            assert_contract_completeness(incomplete_handlers)
+
     def test_describe_runtime_surface_request_succeeds(self) -> None:
         from src.entrypoint import run_entrypoint
 
@@ -179,6 +198,7 @@ class EntrypointContractTest(unittest.TestCase):
         def boom(_payload: dict[str, object]) -> dict[str, object]:
             raise RuntimeError("boom")
 
+        boom.__name__ = original_handler.__name__
         entrypoint.HANDLERS["list-supported-operations"] = boom
         try:
             response = entrypoint.run_entrypoint(
