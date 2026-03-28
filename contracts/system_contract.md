@@ -15,10 +15,77 @@ This repository exists to hold EA-AOL-specific system design and implementation 
 
 If a new addition cannot be placed clearly into one of these layers, it should not be added until its role is explicit.
 
+## Entrypoint Contract
+
+The initial runtime surface is `src.entrypoint.run_entrypoint`.
+
+### Responsibility
+
+- Accept a single request object.
+- Validate whether the request matches the supported bootstrap contract.
+- Return a structured success result for valid input.
+- Reject unsupported or malformed input explicitly instead of guessing.
+
+### Input
+
+`run_entrypoint` accepts a mapping with these required fields:
+
+- `operation`: bootstrap operation selector
+- `payload`: operation-specific data
+
+### Supported Operation
+
+The bootstrap contract supports exactly one operation:
+
+- `describe-runtime-surface`
+
+For this operation, `payload` must be an empty mapping.
+
+### Output
+
+On success, `run_entrypoint` returns a mapping with:
+
+- `ok`: `true`
+- `operation`: echoed operation name
+- `surface`: structured runtime surface description
+
+The `surface` object must contain:
+
+- `project`
+- `status`
+- `contract`
+- `supported_operations`
+
+### Failure Conditions
+
+The entrypoint must reject requests when:
+
+- the input is not a mapping
+- `operation` is missing
+- `operation` is not a string
+- `payload` is missing
+- `payload` is not a mapping
+- `operation` is not supported
+- `payload` violates the supported operation contract
+
+### Fail-Closed Behavior
+
+All unsupported, malformed, or not-yet-implemented requests must stop with an explicit exception.
+The bootstrap runtime must not infer missing fields, silently coerce invalid values, or continue on unknown operations.
+
+### Non-goals
+
+- Executing real EA-AOL runtime work
+- Accepting multiple operation types before the contract is expanded
+- Auto-correcting malformed requests
+
 ## Initial Validation Contract
 
-The repository must retain at least one smoke test that checks:
+The repository must retain tests that check:
 
 - the expected top-level directories exist
 - the contract document is present
 - the implementation entrypoint can be imported
+- valid requests succeed
+- malformed requests fail closed
+- unsupported operations fail closed
