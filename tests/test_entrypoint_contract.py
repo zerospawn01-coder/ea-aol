@@ -25,7 +25,11 @@ class EntrypointContractTest(unittest.TestCase):
         self.assertEqual(response["result"]["project"], "ea-aol")
         self.assertEqual(
             response["result"]["supported_operations"],
-            ["describe-runtime-surface", "list-supported-operations"],
+            [
+                "describe-runtime-surface",
+                "list-supported-operations",
+                "validate-request-envelope",
+            ],
         )
 
     def test_list_supported_operations_request_succeeds(self) -> None:
@@ -43,7 +47,38 @@ class EntrypointContractTest(unittest.TestCase):
         self.assertEqual(response["contract_version"], "ea-aol/0.1")
         self.assertEqual(
             response["result"]["operations"],
-            ["describe-runtime-surface", "list-supported-operations"],
+            [
+                "describe-runtime-surface",
+                "list-supported-operations",
+                "validate-request-envelope",
+            ],
+        )
+
+    def test_validate_request_envelope_request_succeeds(self) -> None:
+        from src.entrypoint import run_entrypoint
+
+        response = run_entrypoint(
+            {
+                "operation": "validate-request-envelope",
+                "payload": {
+                    "candidate_request": {
+                        "operation": "list-supported-operations",
+                        "payload": {},
+                    }
+                },
+            }
+        )
+
+        self.assertEqual(response["status"], "ok")
+        self.assertEqual(response["operation"], "validate-request-envelope")
+        self.assertEqual(response["contract_version"], "ea-aol/0.1")
+        self.assertTrue(response["result"]["valid"])
+        self.assertEqual(
+            response["result"]["normalized_request"],
+            {
+                "operation": "list-supported-operations",
+                "payload": {},
+            },
         )
 
     def test_missing_operation_returns_validation_error_shape(self) -> None:
@@ -113,9 +148,28 @@ class EntrypointContractTest(unittest.TestCase):
         self.assertEqual(response["status"], "error")
         self.assertEqual(response["error"]["code"], "validation_error")
         self.assertIn(
-            "Operation 'list-supported-operations' does not accept payload fields.",
+            "Unexpected fields at payload: verbose",
             response["error"]["message"],
         )
+
+    def test_validate_request_envelope_rejects_invalid_candidate(self) -> None:
+        from src.entrypoint import run_entrypoint
+
+        response = run_entrypoint(
+            {
+                "operation": "validate-request-envelope",
+                "payload": {
+                    "candidate_request": {
+                        "payload": {},
+                    }
+                },
+            }
+        )
+
+        self.assertEqual(response["status"], "error")
+        self.assertEqual(response["operation"], "validate-request-envelope")
+        self.assertEqual(response["error"]["code"], "validation_error")
+        self.assertIn("Request.operation is required.", response["error"]["message"])
 
     def test_internal_failure_returns_internal_error_shape(self) -> None:
         import src.entrypoint as entrypoint

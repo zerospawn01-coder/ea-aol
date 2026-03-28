@@ -21,11 +21,16 @@ OPERATION_CONTRACTS = {
         OPERATION_ROOT / "list_supported_operations.md",
         "list_supported_operations.schema.json",
     ),
+    "validate-request-envelope": (
+        OPERATION_ROOT / "validate_request_envelope.md",
+        "validate_request_envelope.schema.json",
+    ),
 }
 
 RESPONSE_CONTRACTS = {
     "describe-runtime-surface": "describe_runtime_surface.response.schema.json",
     "list-supported-operations": "list_supported_operations.response.schema.json",
+    "validate-request-envelope": "validate_request_envelope.response.schema.json",
 }
 
 CONTRACT_VERSION = "ea-aol/0.1"
@@ -139,8 +144,7 @@ def validate_payload(operation: str, payload: Mapping[str, Any]) -> dict[str, An
     if schema.get("type") != "object":
         raise ContractViolationError(f"Unsupported payload schema type for operation: {operation}")
 
-    if schema.get("additionalProperties") is False and payload:
-        raise ContractViolationError(f"Operation '{operation}' does not accept payload fields.")
+    _validate_against_schema(dict(payload), schema, "payload")
 
     return dict(payload)
 

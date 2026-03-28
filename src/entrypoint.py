@@ -27,6 +27,17 @@ def list_supported_operations() -> list[str]:
     return list(OPERATION_CONTRACTS.keys())
 
 
+def validate_request_envelope(candidate_request: object) -> dict[str, Any]:
+    """Validate and normalize a candidate request envelope."""
+
+    normalized = validate_operation_envelope(candidate_request)
+    normalized["payload"] = validate_payload(normalized["operation"], normalized["payload"])
+    return {
+        "valid": True,
+        "normalized_request": normalized,
+    }
+
+
 def _handle_describe_runtime_surface(_payload: dict[str, Any]) -> dict[str, Any]:
     return describe_runtime_surface()
 
@@ -37,9 +48,14 @@ def _handle_list_supported_operations(_payload: dict[str, Any]) -> dict[str, Any
     }
 
 
+def _handle_validate_request_envelope(payload: dict[str, Any]) -> dict[str, Any]:
+    return validate_request_envelope(payload.get("candidate_request"))
+
+
 HANDLERS = {
     "describe-runtime-surface": _handle_describe_runtime_surface,
     "list-supported-operations": _handle_list_supported_operations,
+    "validate-request-envelope": _handle_validate_request_envelope,
 }
 
 

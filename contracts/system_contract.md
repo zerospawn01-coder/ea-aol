@@ -40,11 +40,13 @@ The bootstrap contract currently supports these operations:
 
 - `describe-runtime-surface`
 - `list-supported-operations`
+- `validate-request-envelope`
 
 The canonical operation contract lives in:
 
 - `contracts/operations/describe_runtime_surface.md`
 - `contracts/operations/list_supported_operations.md`
+- `contracts/operations/validate_request_envelope.md`
 
 The machine-readable schemas live in:
 
@@ -55,6 +57,8 @@ The machine-readable schemas live in:
 - `contracts/schemas/describe_runtime_surface.response.schema.json`
 - `contracts/schemas/list_supported_operations.schema.json`
 - `contracts/schemas/list_supported_operations.response.schema.json`
+- `contracts/schemas/validate_request_envelope.schema.json`
+- `contracts/schemas/validate_request_envelope.response.schema.json`
 
 ### Output
 
@@ -94,6 +98,11 @@ For `describe-runtime-surface`, the result object must contain:
 For `list-supported-operations`, the result object must contain:
 
 - `operations`
+
+For `validate-request-envelope`, the result object must contain:
+
+- `valid`
+- `normalized_request`
 
 ### Failure Conditions
 

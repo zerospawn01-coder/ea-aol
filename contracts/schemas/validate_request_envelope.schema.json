@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "contracts/schemas/validate_request_envelope.schema.json",
+  "title": "validate-request-envelope payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "candidate_request"
+  ],
+  "properties": {
+    "candidate_request": {
+      "type": "object"
+    }
+  }
+}
