@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "contracts/schemas/describe_runtime_surface.schema.json",
+  "title": "describe-runtime-surface payload",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {}
+}

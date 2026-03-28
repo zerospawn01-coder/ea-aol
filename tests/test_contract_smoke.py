@@ -17,6 +17,13 @@ class ContractSmokeTest(unittest.TestCase):
 
     def test_contract_document_exists(self) -> None:
         self.assertTrue((REPO_ROOT / "contracts" / "system_contract.md").is_file())
+        self.assertTrue(
+            (REPO_ROOT / "contracts" / "operations" / "describe_runtime_surface.md").is_file()
+        )
+        self.assertTrue((REPO_ROOT / "contracts" / "schemas" / "operation.schema.json").is_file())
+        self.assertTrue(
+            (REPO_ROOT / "contracts" / "schemas" / "describe_runtime_surface.schema.json").is_file()
+        )
 
     def test_entrypoint_surface_imports(self) -> None:
         from src.entrypoint import describe_runtime_surface
@@ -25,7 +32,7 @@ class ContractSmokeTest(unittest.TestCase):
         self.assertEqual(surface["project"], "ea-aol")
         self.assertEqual(surface["status"], "bootstrap")
         self.assertEqual(surface["contract"], "contracts/system_contract.md")
-        self.assertEqual(surface["supported_operations"], "describe-runtime-surface")
+        self.assertEqual(surface["supported_operations"], ["describe-runtime-surface"])
 
     def test_valid_entrypoint_request_succeeds(self) -> None:
         from src.entrypoint import run_entrypoint
@@ -39,6 +46,7 @@ class ContractSmokeTest(unittest.TestCase):
 
         self.assertTrue(response["ok"])
         self.assertEqual(response["operation"], "describe-runtime-surface")
+        self.assertEqual(response["payload"], {})
         self.assertEqual(response["surface"]["project"], "ea-aol")
 
     def test_missing_operation_fails_closed(self) -> None:
@@ -46,7 +54,7 @@ class ContractSmokeTest(unittest.TestCase):
 
         with self.assertRaisesRegex(
             ContractViolationError,
-            "Request.operation must be a non-empty string.",
+            "Request.operation is required.",
         ):
             run_entrypoint({"payload": {}})
 
@@ -61,6 +69,21 @@ class ContractSmokeTest(unittest.TestCase):
                 {
                     "operation": "describe-runtime-surface",
                     "payload": "invalid",
+                }
+            )
+
+    def test_unexpected_request_field_fails_closed(self) -> None:
+        from src.entrypoint import ContractViolationError, run_entrypoint
+
+        with self.assertRaisesRegex(
+            ContractViolationError,
+            "Unexpected request fields: metadata",
+        ):
+            run_entrypoint(
+                {
+                    "operation": "describe-runtime-surface",
+                    "payload": {},
+                    "metadata": {},
                 }
             )
 
