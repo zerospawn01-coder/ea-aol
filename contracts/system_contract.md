@@ -41,12 +41,14 @@ The bootstrap contract currently supports these operations:
 - `describe-runtime-surface`
 - `list-supported-operations`
 - `validate-request-envelope`
+- `normalize-module-definition`
 
 The canonical operation contract lives in:
 
 - `contracts/operations/describe_runtime_surface.md`
 - `contracts/operations/list_supported_operations.md`
 - `contracts/operations/validate_request_envelope.md`
+- `contracts/operations/normalize_module_definition.md`
 
 The machine-readable schemas live in:
 
@@ -60,6 +62,8 @@ The machine-readable schemas live in:
 - `contracts/schemas/list_supported_operations.response.schema.json`
 - `contracts/schemas/validate_request_envelope.schema.json`
 - `contracts/schemas/validate_request_envelope.response.schema.json`
+- `contracts/schemas/normalize_module_definition.schema.json`
+- `contracts/schemas/normalize_module_definition.response.schema.json`
 
 ### Output
 
@@ -104,6 +108,11 @@ For `validate-request-envelope`, the result object must contain:
 
 - `valid`
 - `normalized_request`
+
+For `normalize-module-definition`, the result object must contain:
+
+- `normalized_module`
+- `ready_for_runtime_registration`
 
 ### Failure Conditions
 

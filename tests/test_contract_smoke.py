@@ -28,6 +28,9 @@ class ContractSmokeTest(unittest.TestCase):
         self.assertTrue(
             (REPO_ROOT / "contracts" / "operations" / "validate_request_envelope.md").is_file()
         )
+        self.assertTrue(
+            (REPO_ROOT / "contracts" / "operations" / "normalize_module_definition.md").is_file()
+        )
         self.assertTrue((REPO_ROOT / "contracts" / "schemas" / "operation.schema.json").is_file())
         self.assertTrue(
             (REPO_ROOT / "contracts" / "schemas" / "response_envelope.schema.json").is_file()
@@ -51,6 +54,12 @@ class ContractSmokeTest(unittest.TestCase):
         self.assertTrue(
             (REPO_ROOT / "contracts" / "schemas" / "validate_request_envelope.response.schema.json").is_file()
         )
+        self.assertTrue(
+            (REPO_ROOT / "contracts" / "schemas" / "normalize_module_definition.schema.json").is_file()
+        )
+        self.assertTrue(
+            (REPO_ROOT / "contracts" / "schemas" / "normalize_module_definition.response.schema.json").is_file()
+        )
 
     def test_entrypoint_surface_imports(self) -> None:
         from src.entrypoint import describe_runtime_surface
@@ -65,6 +74,7 @@ class ContractSmokeTest(unittest.TestCase):
                 "describe-runtime-surface",
                 "list-supported-operations",
                 "validate-request-envelope",
+                "normalize-module-definition",
             ],
         )
 

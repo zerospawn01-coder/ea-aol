@@ -3,6 +3,7 @@
 from typing import Any
 
 from src.contract_runtime import (
+    ContractViolationError,
     OPERATION_CONTRACTS,
     assert_contract_completeness,
     build_error_response,
@@ -39,6 +40,28 @@ def validate_request_envelope(candidate_request: object) -> dict[str, Any]:
     }
 
 
+def normalize_module_definition(module_definition: object) -> dict[str, Any]:
+    """Normalize an EA-AOL module definition into a deterministic descriptor."""
+
+    if not isinstance(module_definition, dict):
+        raise ValueError("payload.module_definition must be a mapping.")
+
+    capabilities = sorted(set(module_definition["capabilities"]))
+    normalized_module = {
+        "name": module_definition["name"],
+        "kind": module_definition["kind"],
+        "capabilities": capabilities,
+        "entrypoint": {
+            "module": module_definition["entrypoint"]["module"],
+            "callable": module_definition["entrypoint"]["callable"],
+        },
+    }
+    return {
+        "normalized_module": normalized_module,
+        "ready_for_runtime_registration": bool(capabilities),
+    }
+
+
 def _handle_describe_runtime_surface(_payload: dict[str, Any]) -> dict[str, Any]:
     return describe_runtime_surface()
 
@@ -53,10 +76,15 @@ def _handle_validate_request_envelope(payload: dict[str, Any]) -> dict[str, Any]
     return validate_request_envelope(payload.get("candidate_request"))
 
 
+def _handle_normalize_module_definition(payload: dict[str, Any]) -> dict[str, Any]:
+    return normalize_module_definition(payload.get("module_definition"))
+
+
 HANDLERS = {
     "describe-runtime-surface": _handle_describe_runtime_surface,
     "list-supported-operations": _handle_list_supported_operations,
     "validate-request-envelope": _handle_validate_request_envelope,
+    "normalize-module-definition": _handle_normalize_module_definition,
 }
 
 
@@ -79,10 +107,11 @@ def run_entrypoint(request: object) -> dict[str, Any]:
 
         result = handler(payload)
         return normalize_success_response(operation, result)
-    except Exception as error:
+    except ContractViolationError as error:
         message = str(error)
         if "Unsupported operation:" in message:
             return build_error_response(operation, "unsupported_operation", message)
-        if "Request." in message or "Operation '" in message or "Unexpected" in message:
-            return build_error_response(operation, "validation_error", message)
+        return build_error_response(operation, "validation_error", message)
+    except Exception as error:
+        message = str(error)
         return build_error_response(operation, "internal_error", message or "Internal runtime error.")

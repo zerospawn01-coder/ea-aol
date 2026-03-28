@@ -48,6 +48,7 @@ class EntrypointContractTest(unittest.TestCase):
                 "describe-runtime-surface",
                 "list-supported-operations",
                 "validate-request-envelope",
+                "normalize-module-definition",
             ],
         )
 
@@ -70,8 +71,46 @@ class EntrypointContractTest(unittest.TestCase):
                 "describe-runtime-surface",
                 "list-supported-operations",
                 "validate-request-envelope",
+                "normalize-module-definition",
             ],
         )
+
+    def test_normalize_module_definition_request_succeeds(self) -> None:
+        from src.entrypoint import run_entrypoint
+
+        response = run_entrypoint(
+            {
+                "operation": "normalize-module-definition",
+                "payload": {
+                    "module_definition": {
+                        "name": "runtime.bootstrap",
+                        "kind": "runtime",
+                        "capabilities": ["dispatch", "contracts", "dispatch"],
+                        "entrypoint": {
+                            "module": "src.entrypoint",
+                            "callable": "run_entrypoint",
+                        },
+                    }
+                },
+            }
+        )
+
+        self.assertEqual(response["status"], "ok")
+        self.assertEqual(response["operation"], "normalize-module-definition")
+        self.assertEqual(response["contract_version"], "ea-aol/0.1")
+        self.assertEqual(
+            response["result"]["normalized_module"],
+            {
+                "name": "runtime.bootstrap",
+                "kind": "runtime",
+                "capabilities": ["contracts", "dispatch"],
+                "entrypoint": {
+                    "module": "src.entrypoint",
+                    "callable": "run_entrypoint",
+                },
+            },
+        )
+        self.assertTrue(response["result"]["ready_for_runtime_registration"])
 
     def test_validate_request_envelope_request_succeeds(self) -> None:
         from src.entrypoint import run_entrypoint
@@ -189,6 +228,31 @@ class EntrypointContractTest(unittest.TestCase):
         self.assertEqual(response["operation"], "validate-request-envelope")
         self.assertEqual(response["error"]["code"], "validation_error")
         self.assertIn("Request.operation is required.", response["error"]["message"])
+
+    def test_normalize_module_definition_rejects_invalid_kind(self) -> None:
+        from src.entrypoint import run_entrypoint
+
+        response = run_entrypoint(
+            {
+                "operation": "normalize-module-definition",
+                "payload": {
+                    "module_definition": {
+                        "name": "runtime.bootstrap",
+                        "kind": "service",
+                        "capabilities": ["dispatch"],
+                        "entrypoint": {
+                            "module": "src.entrypoint",
+                            "callable": "run_entrypoint",
+                        },
+                    }
+                },
+            }
+        )
+
+        self.assertEqual(response["status"], "error")
+        self.assertEqual(response["operation"], "normalize-module-definition")
+        self.assertEqual(response["error"]["code"], "validation_error")
+        self.assertIn("payload.module_definition.kind must be one of", response["error"]["message"])
 
     def test_internal_failure_returns_internal_error_shape(self) -> None:
         import src.entrypoint as entrypoint

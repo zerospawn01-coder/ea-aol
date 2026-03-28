@@ -21,6 +21,13 @@
       "response_schema": "validate_request_envelope.response.schema.json",
       "handler": "_handle_validate_request_envelope",
       "test_file": "tests/test_entrypoint_contract.py"
+    },
+    "normalize-module-definition": {
+      "contract_doc": "contracts/operations/normalize_module_definition.md",
+      "request_schema": "normalize_module_definition.schema.json",
+      "response_schema": "normalize_module_definition.response.schema.json",
+      "handler": "_handle_normalize_module_definition",
+      "test_file": "tests/test_entrypoint_contract.py"
     }
   }
 }
