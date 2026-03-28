@@ -12,6 +12,17 @@ CONTRACT_ROOT = Path(__file__).resolve().parents[1] / "contracts"
 SCHEMA_ROOT = CONTRACT_ROOT / "schemas"
 OPERATION_ROOT = CONTRACT_ROOT / "operations"
 
+OPERATION_CONTRACTS = {
+    "describe-runtime-surface": (
+        OPERATION_ROOT / "describe_runtime_surface.md",
+        "describe_runtime_surface.schema.json",
+    ),
+    "list-supported-operations": (
+        OPERATION_ROOT / "list_supported_operations.md",
+        "list_supported_operations.schema.json",
+    ),
+}
+
 
 class ContractViolationError(ValueError):
     """Raised when a request violates the repository contract."""
@@ -52,17 +63,10 @@ def validate_operation_envelope(request: Any) -> dict[str, Any]:
 
 
 def validate_payload(operation: str, payload: Mapping[str, Any]) -> dict[str, Any]:
-    operation_docs = {
-        "describe-runtime-surface": (
-            OPERATION_ROOT / "describe_runtime_surface.md",
-            "describe_runtime_surface.schema.json",
-        )
-    }
-
-    if operation not in operation_docs:
+    if operation not in OPERATION_CONTRACTS:
         raise ContractViolationError(f"Unsupported operation: {operation}")
 
-    operation_doc, schema_name = operation_docs[operation]
+    operation_doc, schema_name = OPERATION_CONTRACTS[operation]
     if not operation_doc.is_file():
         raise ContractViolationError(f"Missing operation contract: {operation_doc}")
 
@@ -71,8 +75,6 @@ def validate_payload(operation: str, payload: Mapping[str, Any]) -> dict[str, An
         raise ContractViolationError(f"Unsupported payload schema type for operation: {operation}")
 
     if schema.get("additionalProperties") is False and payload:
-        raise ContractViolationError(
-            "Operation 'describe-runtime-surface' does not accept payload fields."
-        )
+        raise ContractViolationError(f"Operation '{operation}' does not accept payload fields.")
 
     return dict(payload)

@@ -39,15 +39,18 @@ The initial runtime surface is `src.entrypoint.run_entrypoint`.
 The bootstrap contract supports exactly one operation:
 
 - `describe-runtime-surface`
+- `list-supported-operations`
 
 The canonical operation contract lives in:
 
 - `contracts/operations/describe_runtime_surface.md`
+- `contracts/operations/list_supported_operations.md`
 
 The machine-readable schemas live in:
 
 - `contracts/schemas/operation.schema.json`
 - `contracts/schemas/describe_runtime_surface.schema.json`
+- `contracts/schemas/list_supported_operations.schema.json`
 
 ### Output
 
