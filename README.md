@@ -8,25 +8,31 @@
 - Includes: language or runtime implementation work that directly defines EA-AOL.
 - Excludes: unrelated research experiments, generic governance manuals, and mixed-project scratch work.
 
-## What Belongs Here
+## Non-goals
 
-- Core implementation for the project.
-- Project-specific specifications and architecture notes.
-- Minimal examples or demos that explain the system.
+- Acting as overflow storage for experiments that do not yet have a stable project identity.
+- Mixing in cross-repository process knowledge better kept in `project-manuals`.
+- Remaining a README-only shell after the project boundary has been defined.
 
-## What Does Not Belong Here
+## Inputs
 
-- General Antigravity research that is not specific to EA-AOL.
-- Experimental spillover that has not yet earned a project boundary.
-- Shared runbooks better kept in `project-manuals`.
+- Project-specific specifications and design decisions.
+- Runtime or compiler implementation work.
+- Minimal demos or examples that prove the project boundary is real.
+
+## Outputs
+
+- A self-contained systems repository with its own architecture and runnable surfaces.
+- Documentation that explains what EA-AOL is without relying on outside repo context.
+- A clear path toward `src/`, `docs/`, and `tests/` or equivalent project-native structure.
 
 ## Validation
 
 - Current state: bootstrap only
 - Add project-specific validation commands here as soon as the first runnable surface lands
 
-## Positioning
+## Promotion Path
 
-- Role: independent project
-- Maintenance level: explicit, project-scoped
-- Success condition: a reader can tell in one pass what EA-AOL is and how to run its first meaningful artifact
+- Inbound: work only when it directly defines the EA-AOL project boundary.
+- Outbound: generic experiments belong in `lab-experiments`; shared procedure belongs in `project-manuals`.
+- Repository role: independent project repository with explicit project-scoped maintenance.
