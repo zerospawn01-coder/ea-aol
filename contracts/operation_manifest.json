@@ -35,6 +35,13 @@
       "response_schema": "validate_module_definition.response.schema.json",
       "handler": "_handle_validate_module_definition",
       "test_file": "tests/test_entrypoint_contract.py"
+    },
+    "describe-module-surface": {
+      "contract_doc": "contracts/operations/describe_module_surface.md",
+      "request_schema": "describe_module_surface.schema.json",
+      "response_schema": "describe_module_surface.response.schema.json",
+      "handler": "_handle_describe_module_surface",
+      "test_file": "tests/test_entrypoint_contract.py"
     }
   }
 }

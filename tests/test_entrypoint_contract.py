@@ -50,6 +50,7 @@ class EntrypointContractTest(unittest.TestCase):
                 "validate-request-envelope",
                 "normalize-module-definition",
                 "validate-module-definition",
+                "describe-module-surface",
             ],
         )
 
@@ -74,6 +75,7 @@ class EntrypointContractTest(unittest.TestCase):
                 "validate-request-envelope",
                 "normalize-module-definition",
                 "validate-module-definition",
+                "describe-module-surface",
             ],
         )
 
@@ -187,6 +189,41 @@ class EntrypointContractTest(unittest.TestCase):
                     "module": "src.entrypoint",
                     "callable": "run_entrypoint",
                 },
+            },
+        )
+
+    def test_describe_module_surface_request_succeeds(self) -> None:
+        from src.entrypoint import run_entrypoint
+
+        response = run_entrypoint(
+            {
+                "operation": "describe-module-surface",
+                "payload": {
+                    "module_definition": {
+                        "name": " runtime.bootstrap ",
+                        "kind": "runtime",
+                        "capabilities": ["dispatch", "contracts", "dispatch"],
+                        "entrypoint": {
+                            "module": " src.entrypoint ",
+                            "callable": " run_entrypoint ",
+                        },
+                    }
+                },
+            }
+        )
+
+        self.assertEqual(response["status"], "ok")
+        self.assertEqual(response["operation"], "describe-module-surface")
+        self.assertEqual(
+            response["result"]["module_surface"],
+            {
+                "module_key": "runtime:runtime.bootstrap",
+                "kind": "runtime",
+                "name": "runtime.bootstrap",
+                "entrypoint_ref": "src.entrypoint:run_entrypoint",
+                "capability_count": 2,
+                "capability_surface": ["contracts", "dispatch"],
+                "ready_for_runtime_registration": True,
             },
         )
 
@@ -385,6 +422,34 @@ class EntrypointContractTest(unittest.TestCase):
         self.assertEqual(response["error"]["code"], "validation_error")
         self.assertIn(
             "payload.module_definition.entrypoint.callable must not be empty after normalization.",
+            response["error"]["message"],
+        )
+
+    def test_describe_module_surface_rejects_blank_name_after_normalization(self) -> None:
+        from src.entrypoint import run_entrypoint
+
+        response = run_entrypoint(
+            {
+                "operation": "describe-module-surface",
+                "payload": {
+                    "module_definition": {
+                        "name": "   ",
+                        "kind": "runtime",
+                        "capabilities": ["dispatch"],
+                        "entrypoint": {
+                            "module": "src.entrypoint",
+                            "callable": "run_entrypoint",
+                        },
+                    }
+                },
+            }
+        )
+
+        self.assertEqual(response["status"], "error")
+        self.assertEqual(response["operation"], "describe-module-surface")
+        self.assertEqual(response["error"]["code"], "validation_error")
+        self.assertIn(
+            "payload.module_definition.name must not be empty after normalization.",
             response["error"]["message"],
         )
 

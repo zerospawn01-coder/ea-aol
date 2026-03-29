@@ -109,6 +109,27 @@ def validate_module_definition(module_definition: object) -> dict[str, Any]:
     }
 
 
+def describe_module_surface(module_definition: object) -> dict[str, Any]:
+    """Extract a stable external surface from a canonical module descriptor."""
+
+    normalized_module = canonicalize_module_definition(module_definition)
+    capability_surface = normalized_module["capabilities"]
+    return {
+        "module_surface": {
+            "module_key": f"{normalized_module['kind']}:{normalized_module['name']}",
+            "kind": normalized_module["kind"],
+            "name": normalized_module["name"],
+            "entrypoint_ref": (
+                f"{normalized_module['entrypoint']['module']}:"
+                f"{normalized_module['entrypoint']['callable']}"
+            ),
+            "capability_count": len(capability_surface),
+            "capability_surface": capability_surface,
+            "ready_for_runtime_registration": bool(capability_surface),
+        }
+    }
+
+
 def _handle_describe_runtime_surface(_payload: dict[str, Any]) -> dict[str, Any]:
     return describe_runtime_surface()
 
@@ -131,12 +152,17 @@ def _handle_validate_module_definition(payload: dict[str, Any]) -> dict[str, Any
     return validate_module_definition(payload.get("module_definition"))
 
 
+def _handle_describe_module_surface(payload: dict[str, Any]) -> dict[str, Any]:
+    return describe_module_surface(payload.get("module_definition"))
+
+
 HANDLERS = {
     "describe-runtime-surface": _handle_describe_runtime_surface,
     "list-supported-operations": _handle_list_supported_operations,
     "validate-request-envelope": _handle_validate_request_envelope,
     "normalize-module-definition": _handle_normalize_module_definition,
     "validate-module-definition": _handle_validate_module_definition,
+    "describe-module-surface": _handle_describe_module_surface,
 }
 
 
