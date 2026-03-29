@@ -28,11 +28,17 @@
 
 ## Validation
 
-- Current state: bootstrap only
-- Add project-specific validation commands here as soon as the first runnable surface lands
+- `python -m unittest tests.test_contract_smoke -v`
 
 ## Promotion Path
 
 - Inbound: work only when it directly defines the EA-AOL project boundary.
 - Outbound: generic experiments belong in `lab-experiments`; shared procedure belongs in `project-manuals`.
 - Repository role: independent project repository with explicit project-scoped maintenance.
+
+## Initial Layout
+
+- `docs/`: human-readable overview and architecture decisions.
+- `contracts/`: repository-level contracts, invariants, and fail-closed boundaries.
+- `src/`: implementation entrypoints and project code.
+- `tests/`: contract smoke tests and early regression coverage.

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "contracts/schemas/describe_runtime_surface.response.schema.json",
+  "title": "describe-runtime-surface result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "project",
+    "status",
+    "contract",
+    "supported_operations"
+  ],
+  "properties": {
+    "project": {
+      "const": "ea-aol"
+    },
+    "status": {
+      "type": "string"
+    },
+    "contract": {
+      "const": "contracts/system_contract.md"
+    },
+    "supported_operations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

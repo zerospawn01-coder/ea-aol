@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "contracts/schemas/list_supported_operations.schema.json",
+  "title": "list-supported-operations payload",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {}
+}

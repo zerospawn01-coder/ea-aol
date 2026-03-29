@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "contracts/schemas/validate_request_envelope.response.schema.json",
+  "title": "validate-request-envelope result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "valid",
+    "normalized_request"
+  ],
+  "properties": {
+    "valid": {
+      "const": true
+    },
+    "normalized_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "properties": {
+        "operation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "payload": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}

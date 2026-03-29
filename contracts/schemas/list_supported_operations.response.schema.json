@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "contracts/schemas/list_supported_operations.response.schema.json",
+  "title": "list-supported-operations result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "operations"
+  ],
+  "properties": {
+    "operations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

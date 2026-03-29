@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "contracts/schemas/error.schema.json",
+  "title": "EA-AOL Error Shape",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "code",
+    "message",
+    "category",
+    "retryable"
+  ],
+  "properties": {
+    "code": {
+      "type": "string",
+      "enum": [
+        "validation_error",
+        "unsupported_operation",
+        "internal_error"
+      ]
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "validation",
+        "unsupported",
+        "internal"
+      ]
+    },
+    "retryable": {
+      "type": "boolean"
+    }
+  }
+}
