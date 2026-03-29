@@ -28,6 +28,13 @@
       "response_schema": "normalize_module_definition.response.schema.json",
       "handler": "_handle_normalize_module_definition",
       "test_file": "tests/test_entrypoint_contract.py"
+    },
+    "validate-module-definition": {
+      "contract_doc": "contracts/operations/validate_module_definition.md",
+      "request_schema": "validate_module_definition.schema.json",
+      "response_schema": "validate_module_definition.response.schema.json",
+      "handler": "_handle_validate_module_definition",
+      "test_file": "tests/test_entrypoint_contract.py"
     }
   }
 }

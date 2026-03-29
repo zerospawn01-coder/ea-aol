@@ -25,10 +25,18 @@ On success, return:
 - `result.normalized_module`: normalized module definition containing:
   - `name`
   - `kind`
-  - `capabilities`: sorted unique capability names
+  - `capabilities`: trimmed, sorted unique capability names
   - `entrypoint.module`
   - `entrypoint.callable`
 - `result.ready_for_runtime_registration`: boolean
+
+## Canonicalization Invariants
+
+- leading and trailing whitespace is removed from `name`, capability names, `entrypoint.module`, and `entrypoint.callable`
+- `capabilities` is deduplicated and sorted lexicographically after trimming
+- no implicit defaults are added
+- `ready_for_runtime_registration` is `true` only when at least one capability remains after normalization
+- fields that normalize to an empty string are rejected rather than preserved
 
 ## Failure Conditions
 
@@ -39,6 +47,7 @@ Reject when:
 - `kind` is outside the supported EA-AOL module kinds
 - `capabilities` contains non-string values
 - `entrypoint` is missing required fields
+- any required string normalizes to an empty value
 - unexpected fields appear anywhere in the payload contract
 
 ## Fail-Closed Rule

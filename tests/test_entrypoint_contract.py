@@ -49,6 +49,7 @@ class EntrypointContractTest(unittest.TestCase):
                 "list-supported-operations",
                 "validate-request-envelope",
                 "normalize-module-definition",
+                "validate-module-definition",
             ],
         )
 
@@ -72,6 +73,7 @@ class EntrypointContractTest(unittest.TestCase):
                 "list-supported-operations",
                 "validate-request-envelope",
                 "normalize-module-definition",
+                "validate-module-definition",
             ],
         )
 
@@ -83,12 +85,12 @@ class EntrypointContractTest(unittest.TestCase):
                 "operation": "normalize-module-definition",
                 "payload": {
                     "module_definition": {
-                        "name": "runtime.bootstrap",
+                        "name": "  runtime.bootstrap  ",
                         "kind": "runtime",
-                        "capabilities": ["dispatch", "contracts", "dispatch"],
+                        "capabilities": [" dispatch ", "contracts", "dispatch"],
                         "entrypoint": {
-                            "module": "src.entrypoint",
-                            "callable": "run_entrypoint",
+                            "module": " src.entrypoint ",
+                            "callable": " run_entrypoint ",
                         },
                     }
                 },
@@ -111,6 +113,82 @@ class EntrypointContractTest(unittest.TestCase):
             },
         )
         self.assertTrue(response["result"]["ready_for_runtime_registration"])
+
+    def test_normalize_module_definition_is_deterministic_across_order_and_spacing(self) -> None:
+        from src.entrypoint import run_entrypoint
+
+        first = run_entrypoint(
+            {
+                "operation": "normalize-module-definition",
+                "payload": {
+                    "module_definition": {
+                        "name": " runtime.bootstrap ",
+                        "kind": "runtime",
+                        "capabilities": [" dispatch", "contracts ", "dispatch"],
+                        "entrypoint": {
+                            "module": " src.entrypoint",
+                            "callable": "run_entrypoint ",
+                        },
+                    }
+                },
+            }
+        )
+        second = run_entrypoint(
+            {
+                "operation": "normalize-module-definition",
+                "payload": {
+                    "module_definition": {
+                        "name": "runtime.bootstrap",
+                        "kind": "runtime",
+                        "capabilities": ["contracts", "dispatch"],
+                        "entrypoint": {
+                            "module": "src.entrypoint",
+                            "callable": "run_entrypoint",
+                        },
+                    }
+                },
+            }
+        )
+
+        self.assertEqual(first["status"], "ok")
+        self.assertEqual(second["status"], "ok")
+        self.assertEqual(first["result"]["normalized_module"], second["result"]["normalized_module"])
+
+    def test_validate_module_definition_request_succeeds(self) -> None:
+        from src.entrypoint import run_entrypoint
+
+        response = run_entrypoint(
+            {
+                "operation": "validate-module-definition",
+                "payload": {
+                    "module_definition": {
+                        "name": " runtime.bootstrap ",
+                        "kind": "runtime",
+                        "capabilities": ["dispatch", "contracts"],
+                        "entrypoint": {
+                            "module": " src.entrypoint ",
+                            "callable": " run_entrypoint ",
+                        },
+                    }
+                },
+            }
+        )
+
+        self.assertEqual(response["status"], "ok")
+        self.assertEqual(response["operation"], "validate-module-definition")
+        self.assertTrue(response["result"]["valid"])
+        self.assertEqual(
+            response["result"]["normalized_module"],
+            {
+                "name": "runtime.bootstrap",
+                "kind": "runtime",
+                "capabilities": ["contracts", "dispatch"],
+                "entrypoint": {
+                    "module": "src.entrypoint",
+                    "callable": "run_entrypoint",
+                },
+            },
+        )
 
     def test_validate_request_envelope_request_succeeds(self) -> None:
         from src.entrypoint import run_entrypoint
@@ -253,6 +331,62 @@ class EntrypointContractTest(unittest.TestCase):
         self.assertEqual(response["operation"], "normalize-module-definition")
         self.assertEqual(response["error"]["code"], "validation_error")
         self.assertIn("payload.module_definition.kind must be one of", response["error"]["message"])
+
+    def test_normalize_module_definition_rejects_blank_after_normalization(self) -> None:
+        from src.entrypoint import run_entrypoint
+
+        response = run_entrypoint(
+            {
+                "operation": "normalize-module-definition",
+                "payload": {
+                    "module_definition": {
+                        "name": "runtime.bootstrap",
+                        "kind": "runtime",
+                        "capabilities": ["   "],
+                        "entrypoint": {
+                            "module": "src.entrypoint",
+                            "callable": "run_entrypoint",
+                        },
+                    }
+                },
+            }
+        )
+
+        self.assertEqual(response["status"], "error")
+        self.assertEqual(response["operation"], "normalize-module-definition")
+        self.assertEqual(response["error"]["code"], "validation_error")
+        self.assertIn(
+            "payload.module_definition.capabilities[0] must not be empty after normalization.",
+            response["error"]["message"],
+        )
+
+    def test_validate_module_definition_rejects_blank_callable_after_normalization(self) -> None:
+        from src.entrypoint import run_entrypoint
+
+        response = run_entrypoint(
+            {
+                "operation": "validate-module-definition",
+                "payload": {
+                    "module_definition": {
+                        "name": "runtime.bootstrap",
+                        "kind": "runtime",
+                        "capabilities": ["dispatch"],
+                        "entrypoint": {
+                            "module": "src.entrypoint",
+                            "callable": "   ",
+                        },
+                    }
+                },
+            }
+        )
+
+        self.assertEqual(response["status"], "error")
+        self.assertEqual(response["operation"], "validate-module-definition")
+        self.assertEqual(response["error"]["code"], "validation_error")
+        self.assertIn(
+            "payload.module_definition.entrypoint.callable must not be empty after normalization.",
+            response["error"]["message"],
+        )
 
     def test_internal_failure_returns_internal_error_shape(self) -> None:
         import src.entrypoint as entrypoint

@@ -30,6 +30,10 @@ OPERATION_CONTRACTS = {
         OPERATION_ROOT / "normalize_module_definition.md",
         "normalize_module_definition.schema.json",
     ),
+    "validate-module-definition": (
+        OPERATION_ROOT / "validate_module_definition.md",
+        "validate_module_definition.schema.json",
+    ),
 }
 
 RESPONSE_CONTRACTS = {
@@ -37,6 +41,7 @@ RESPONSE_CONTRACTS = {
     "list-supported-operations": "list_supported_operations.response.schema.json",
     "validate-request-envelope": "validate_request_envelope.response.schema.json",
     "normalize-module-definition": "normalize_module_definition.response.schema.json",
+    "validate-module-definition": "validate_module_definition.response.schema.json",
 }
 
 CONTRACT_VERSION = "ea-aol/0.1"

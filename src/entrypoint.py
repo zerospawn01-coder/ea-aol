@@ -40,25 +40,72 @@ def validate_request_envelope(candidate_request: object) -> dict[str, Any]:
     }
 
 
+def _normalize_non_empty_text(value: object, path: str) -> str:
+    if not isinstance(value, str):
+        raise ContractViolationError(f"{path} must be a string.")
+    normalized = value.strip()
+    if not normalized:
+        raise ContractViolationError(f"{path} must not be empty after normalization.")
+    return normalized
+
+
+def canonicalize_module_definition(module_definition: object) -> dict[str, Any]:
+    """Canonicalize an EA-AOL module definition."""
+
+    if not isinstance(module_definition, dict):
+        raise ContractViolationError("payload.module_definition must be a mapping.")
+
+    capabilities_value = module_definition["capabilities"]
+    if not isinstance(capabilities_value, list):
+        raise ContractViolationError("payload.module_definition.capabilities must be an array.")
+
+    normalized_capabilities = sorted(
+        {
+            _normalize_non_empty_text(
+                capability,
+                f"payload.module_definition.capabilities[{index}]",
+            )
+            for index, capability in enumerate(capabilities_value)
+        }
+    )
+
+    entrypoint_value = module_definition["entrypoint"]
+    if not isinstance(entrypoint_value, dict):
+        raise ContractViolationError("payload.module_definition.entrypoint must be a mapping.")
+
+    return {
+        "name": _normalize_non_empty_text(module_definition["name"], "payload.module_definition.name"),
+        "kind": module_definition["kind"],
+        "capabilities": normalized_capabilities,
+        "entrypoint": {
+            "module": _normalize_non_empty_text(
+                entrypoint_value["module"],
+                "payload.module_definition.entrypoint.module",
+            ),
+            "callable": _normalize_non_empty_text(
+                entrypoint_value["callable"],
+                "payload.module_definition.entrypoint.callable",
+            ),
+        },
+    }
+
+
 def normalize_module_definition(module_definition: object) -> dict[str, Any]:
     """Normalize an EA-AOL module definition into a deterministic descriptor."""
 
-    if not isinstance(module_definition, dict):
-        raise ValueError("payload.module_definition must be a mapping.")
-
-    capabilities = sorted(set(module_definition["capabilities"]))
-    normalized_module = {
-        "name": module_definition["name"],
-        "kind": module_definition["kind"],
-        "capabilities": capabilities,
-        "entrypoint": {
-            "module": module_definition["entrypoint"]["module"],
-            "callable": module_definition["entrypoint"]["callable"],
-        },
-    }
+    normalized_module = canonicalize_module_definition(module_definition)
     return {
         "normalized_module": normalized_module,
-        "ready_for_runtime_registration": bool(capabilities),
+        "ready_for_runtime_registration": bool(normalized_module["capabilities"]),
+    }
+
+
+def validate_module_definition(module_definition: object) -> dict[str, Any]:
+    """Validate an EA-AOL module definition against the canonical descriptor contract."""
+
+    return {
+        "valid": True,
+        "normalized_module": canonicalize_module_definition(module_definition),
     }
 
 
@@ -80,11 +127,16 @@ def _handle_normalize_module_definition(payload: dict[str, Any]) -> dict[str, An
     return normalize_module_definition(payload.get("module_definition"))
 
 
+def _handle_validate_module_definition(payload: dict[str, Any]) -> dict[str, Any]:
+    return validate_module_definition(payload.get("module_definition"))
+
+
 HANDLERS = {
     "describe-runtime-surface": _handle_describe_runtime_surface,
     "list-supported-operations": _handle_list_supported_operations,
     "validate-request-envelope": _handle_validate_request_envelope,
     "normalize-module-definition": _handle_normalize_module_definition,
+    "validate-module-definition": _handle_validate_module_definition,
 }
 
 
