@@ -29,6 +29,17 @@
 ## Validation
 
 - `python -m unittest tests.test_contract_smoke -v`
+- `python tools/ci_gate.py validate-schema`
+- `python tools/ci_gate.py validate-completeness`
+- `python tools/ci_gate.py validate-response-contract`
+- `python tools/ci_gate.py validate-governance`
+- `python tools/ci_gate.py unit-tests`
+
+## CI Gates
+
+- Required checks should be set to the workflow job names: `validate-schema`, `validate-completeness`, `validate-response-contract`, `validate-governance`, and `unit-tests`.
+- Every gate is fail-closed and emits structured `PASS` or `FAIL` JSON. There is no warning path.
+- Auto-merge should only be enabled after all required checks are green.
 
 ## Promotion Path
 
