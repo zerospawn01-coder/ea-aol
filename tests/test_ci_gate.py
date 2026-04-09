@@ -2,7 +2,9 @@ import json
 import subprocess
 import sys
 import unittest
+from io import StringIO
 from pathlib import Path
+from contextlib import redirect_stdout
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -39,6 +41,32 @@ class CiGateTest(unittest.TestCase):
         payload = self.run_gate("validate-governance")
         self.assertEqual(payload["status"], "PASS")
         self.assertEqual(payload["gate"], "validate-governance")
+
+    def test_unknown_internal_gate_errors_are_normalized(self) -> None:
+        sys.path.insert(0, str(REPO_ROOT))
+        try:
+            import tools.ci_gate as ci_gate
+        finally:
+            sys.path.pop(0)
+
+        original_gate = ci_gate.GATES["validate-schema"]
+
+        def boom() -> int:
+            raise RuntimeError("boom")
+
+        ci_gate.GATES["validate-schema"] = boom
+        try:
+            stdout = StringIO()
+            with redirect_stdout(stdout):
+                code = ci_gate.main(["tools/ci_gate.py", "validate-schema"])
+        finally:
+            ci_gate.GATES["validate-schema"] = original_gate
+
+        self.assertEqual(code, 1)
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(payload["status"], "FAIL")
+        self.assertEqual(payload["gate"], "validate-schema")
+        self.assertEqual(payload["violations"][0]["type"], "INTERNAL_CI_ERROR")
 
 
 if __name__ == "__main__":

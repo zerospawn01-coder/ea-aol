@@ -89,32 +89,37 @@ def _sample_module_definition() -> dict[str, Any]:
     }
 
 
-def _sample_requests() -> list[dict[str, Any]]:
-    return [
-        {"operation": "describe-runtime-surface", "payload": {}},
-        {"operation": "list-supported-operations", "payload": {}},
-        {
-            "operation": "validate-request-envelope",
+def _sample_request_for_operation(operation: str) -> dict[str, Any]:
+    if operation == "describe-runtime-surface":
+        return {"operation": operation, "payload": {}}
+    if operation == "list-supported-operations":
+        return {"operation": operation, "payload": {}}
+    if operation == "validate-request-envelope":
+        return {
+            "operation": operation,
             "payload": {
                 "candidate_request": {
                     "operation": "list-supported-operations",
                     "payload": {},
                 }
             },
-        },
-        {
-            "operation": "normalize-module-definition",
+        }
+    if operation in {
+        "normalize-module-definition",
+        "validate-module-definition",
+        "describe-module-surface",
+    }:
+        return {
+            "operation": operation,
             "payload": {"module_definition": _sample_module_definition()},
-        },
-        {
-            "operation": "validate-module-definition",
-            "payload": {"module_definition": _sample_module_definition()},
-        },
-        {
-            "operation": "describe-module-surface",
-            "payload": {"module_definition": _sample_module_definition()},
-        },
-    ]
+        }
+    raise GateFailure(
+        gate="validate-response-contract",
+        violation_type="RESPONSE_CONTRACT_VIOLATION",
+        violation_id=operation,
+        file=str(CONTRACT_ROOT / "operation_manifest.json"),
+        reason=f"No representative request is defined for operation: {operation}",
+    )
 
 
 def _validate_manifest_shape() -> dict[str, Any]:
@@ -187,8 +192,10 @@ def run_validate_completeness() -> int:
 def run_validate_response_contract() -> int:
     gate = "validate-response-contract"
     try:
+        manifest = _validate_manifest_shape()
         validated_operations: list[str] = []
-        for request in _sample_requests():
+        for operation in manifest["operations"].keys():
+            request = _sample_request_for_operation(operation)
             response = run_entrypoint(request)
             validate_response_envelope(response)
             if response["status"] != "ok":
@@ -331,7 +338,21 @@ def main(argv: list[str]) -> int:
         print("Usage: python tools/ci_gate.py <gate>", file=sys.stderr)
         print("Available gates:", ", ".join(sorted(GATES.keys())), file=sys.stderr)
         return 2
-    return GATES[argv[1]]()
+    gate = argv[1]
+    try:
+        return GATES[gate]()
+    except GateFailure as error:
+        return _fail(gate, error)
+    except Exception as error:
+        return _fail(
+            gate,
+            GateFailure(
+                gate=gate,
+                violation_type="INTERNAL_CI_ERROR",
+                violation_id=gate,
+                reason=str(error) or "Unexpected CI gate failure.",
+            ),
+        )
 
 
 if __name__ == "__main__":
