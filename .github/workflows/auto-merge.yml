@@ -1,0 +1,44 @@
+name: auto-merge
+
+on:
+  pull_request_target:
+    types: [labeled, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  enable-auto-merge:
+    if: contains(github.event.pull_request.labels.*.name, 'automerge') && github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Enable native auto-merge
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            try {
+              await github.graphql(
+                `
+                  mutation($pullRequestId: ID!) {
+                    enablePullRequestAutoMerge(
+                      input: { pullRequestId: $pullRequestId, mergeMethod: SQUASH }
+                    ) {
+                      pullRequest {
+                        number
+                      }
+                    }
+                  }
+                `,
+                { pullRequestId: pr.node_id }
+              );
+              core.info(`Enabled auto-merge for PR #${pr.number}.`);
+            } catch (error) {
+              core.setFailed(String(error));
+            }
